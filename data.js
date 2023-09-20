@@ -1,5 +1,7 @@
 const path= require('path');
 const fs = require('fs');
+const axios = require('axios');
+const { readdirSync } = fs;
 
 const checkMarkdownFile = function(file){
     for (let i = 0; i < markdownExtensions.length; i++){
@@ -50,7 +52,55 @@ const readFileMarkdown = function(file){
   })
     
 }
-  
+
+function validateLinks(linkList) {
+  const validatePromises = linkList.map((link) => {
+    return axios.head(link.href)
+    .then((response) => {
+      return {
+        href: link.href,
+        text: link.text,
+        file: link.file,
+        status: response.status,
+        statusText: response.statusText
+      }
+    })
+    .catch((error) => {
+      return {
+        href: link.href,
+        text: link.text,
+        file: link.file,
+        status: error.response ? error.response.status: 'no response',
+        statusText: 'Fail'
+      }
+    })
+  })
+  return Promise.all(validatePromises);
+}
+
+const readDirectoryAndExtractFilesMd = (file) => {
+  let newArray = [];
+  let array = readdirSync(file);
+  array.forEach((item) => {
+    const newPath = path.resolve(file, item);
+    if (path.extname(newPath) === ".md") {
+      newArray.push(newPath);
+    } 
+  })
+  return newArray;
+}
+
+const extractDirectoryLinks = (directoryPath) => {
+  const array = readDirectoryAndExtractFilesMd(directoryPath);
+  const arrayLinks = array.map((link) => readFileMarkdown(link));
+  return Promise.all(arrayLinks).then((arrayOfArrays) => {
+    const flatArray = arrayOfArrays.reduce(
+      (accumulator,currentArray) => [...accumulator, ...currentArray],
+      []
+    );
+  return flatArray
+  });
+};
 
 
-module.exports = {checkMarkdownFile, readFileMarkdown}
+module.exports = { checkMarkdownFile, readFileMarkdown, validateLinks, readDirectoryAndExtractFilesMd, extractDirectoryLinks  }
