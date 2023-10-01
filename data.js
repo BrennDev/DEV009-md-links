@@ -1,8 +1,8 @@
 const path= require('path');
 const fs = require('fs');
 const axios = require('axios');
-const { readdirSync } = fs;
-
+const { readdirSync, statSync } = fs;
+// Función que verifica que los archivos tengan formato markdown
 const checkMarkdownFile = function(file){
     for (let i = 0; i < markdownExtensions.length; i++){
        if (path.extname(file) === markdownExtensions[i]){
@@ -12,7 +12,7 @@ const checkMarkdownFile = function(file){
        }
     }
 };
-
+// Extensiones markdown
 const markdownExtensions = [
     '.md',
     '.mkd',
@@ -23,7 +23,7 @@ const markdownExtensions = [
     '.markdown',
     '.text',
 ]
-
+// Función que lee el contenido del archivo .md, extrae los enlaces
 const readFileMarkdown = function(file){
   return new Promise ((resolve, reject) => {
     fs.readFile(file, 'utf-8', (err,data)=>{
@@ -44,25 +44,22 @@ const readFileMarkdown = function(file){
           };
           linkList.push(arrayObjects);
         }
-        //console.log(linkList);
         resolve(linkList); 
       }
     })
-
   })
-    
 }
-
+// Función que hace la validación de los links
 function validateLinks(linkList) {
   const validatePromises = linkList.map((link) => {
-    return axios.head(link.href)
+    return axios.get(link.href)
     .then((response) => {
       return {
         href: link.href,
         text: link.text,
         file: link.file,
         status: response.status,
-        statusText: response.statusText
+        statusText: "✅OK✅"
       }
     })
     .catch((error) => {
@@ -71,25 +68,31 @@ function validateLinks(linkList) {
         text: link.text,
         file: link.file,
         status: error.response ? error.response.status: 'no response',
-        statusText: 'Fail'
+        statusText: "❌FAIL❌"
       }
     })
   })
   return Promise.all(validatePromises);
 }
-
+// Función que lee un directorio y busca archivod con extensión markdown
 const readDirectoryAndExtractFilesMd = (file) => {
   let newArray = [];
+  let subDirectories = [];
   let array = readdirSync(file);
   array.forEach((item) => {
     const newPath = path.resolve(file, item);
     if (path.extname(newPath) === ".md") {
       newArray.push(newPath);
-    } 
+    } else if (statSync(newPath).isDirectory()) {
+      subDirectories = readDirectoryAndExtractFilesMd(newPath);
+      if (subDirectories.length > 0){
+        newArray.push(...subDirectories);
+      }
+    }
   })
   return newArray;
 }
-
+// Función que extrae los links de un directorio
 const extractDirectoryLinks = (directoryPath) => {
   const array = readDirectoryAndExtractFilesMd(directoryPath);
   const arrayLinks = array.map((link) => readFileMarkdown(link));
@@ -101,6 +104,21 @@ const extractDirectoryLinks = (directoryPath) => {
   return flatArray
   });
 };
+//Función que calcula las estadisticas básicas de los links encontrados, incluyendo el número total de links encontrados y el número de links únicos.
+const calculateLinksStates = (response) => {
+  return {
+    total: response.length,
+    unique: new Set(response.map(({ href }) => href)).size,
+  };
+};
+// Función que calcula las estadísticas de los links encontrados, incluyendo la cantidad total de links, la cantidad de links únicos y la cantidad de links rotos o no funcionales.
+const calculateBrokenLinksStats = (response) => {
+  const brokens = response.filter((link) => link.statusText === "❌FAIL❌").length;
+  return {
+    total: response.length,
+    unique: new Set(response.map(({ href }) => href)).size,
+    broken: brokens,
+  };
+};
 
-
-module.exports = { checkMarkdownFile, readFileMarkdown, validateLinks, readDirectoryAndExtractFilesMd, extractDirectoryLinks  }
+module.exports = { checkMarkdownFile, readFileMarkdown, validateLinks, readDirectoryAndExtractFilesMd, extractDirectoryLinks, calculateLinksStates, calculateBrokenLinksStats  }

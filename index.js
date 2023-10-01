@@ -16,22 +16,35 @@ return new Promise((resolve, reject) => {
       if (options === true){
         let promiseChain = Promise.resolve();
         promiseChain = promiseChain
+        // Lectura del archivo Markdown
         .then(() => readFileMarkdown(absolutePath))
+        // Obtener los links del archivo
         .then((listLinks) => validateLinks(listLinks))
+        // Validar los links
         .then((listLinksValidate) => {
           resolve(listLinksValidate);
         })
         .catch((error) => {
           reject(error);
         })      
+    } else {
+      resolve(readFileMarkdown(absolutePath))
     }
-      // Lectura del archivo Markdown
-      // Obtener los links del archivo
         
     } else if (fileOrDir.isDirectory()){
       // Si es un directorio filtrar los archivos md
       const linksDirectory = extractDirectoryLinks(absolutePath)
-      resolve(linksDirectory);
+      if (options === true){
+        let promiseDir = Promise.resolve ()
+        promiseDir = promiseDir
+        .then(() => extractDirectoryLinks(absolutePath))
+        .then((flatArray) => validateLinks(flatArray))
+        .then ((validateLinksDirectory) => {
+          resolve (validateLinksDirectory)
+        })
+      } else{
+        resolve(linksDirectory);
+      }
     } else {
       reject('La ruta no es un archivo markdown');
     }

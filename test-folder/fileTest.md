@@ -1,14 +1,6 @@
-* Usando un módulo como
-  [Markdown-it](https://www.npmjs.com/package/markdown-it), que nos devuelve
-  un arreglo de tokens que podemos recorrer para identificar los links.
+*Peliculas Studio Ghibli Inc
+[Castle in the Sky](https://static.wikia.nocookie.net/studio-ghibli/images/c/c1/Castle_in_the_Sky.jpg)
+[Grave of the Fireflies](https://static.wikia.nocookie.net/studio-ghibli/images/a/a5/Grave_of_the_Fireflies_Japanese_poster.jpg)
+[Only Yesterday](https://static.wikia.nocookie.net/studio-ghibli/images/a/a9/Only_Yesterday.jpg)
 
-* También podríamos usar una combinación de varios módulos (podría ser válido
-  transformar el Markdown a HTML usando algo como [marked](https://github.com/markedjs/marked)
-  y de ahí extraer los links con una librería de DOM como [JSDOM](https://www.npmjs.com/package/jsdom)
-  o [Cheerio](https://cheerio.js.org/) entre otras).
 
-* Usando un [custom renderer de la librería marked](https://marked.js.org/using_pro#renderer)
-  (new marked.Renderer()).
-
-* Siguiendo otro camino completamente diferente, podríamos usar expresiones
-  regulares (RegExp).
